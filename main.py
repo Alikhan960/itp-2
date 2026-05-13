@@ -1,93 +1,147 @@
+import os
+import json
 import uuid
+import time
 from datetime import datetime
+from functools import wraps
 
-class Event:
-    """Class representing a university event."""
-    def __init__(self, title, description, date_str, capacity):
-        # Using uuid to generate a unique ID for each event
-        self.event_id = str(uuid.uuid4())[:8] 
-        self.title = title
-        self.description = description
-        self.date = datetime.strptime(date_str, "%Y-%m-%d %H:%M")
-        self.capacity = capacity
-        # Set to quickly verify unique user IDs and prevent duplicate registrations
-        self.attendees = set() 
+# --- DECORATORS  ---
 
-    def is_full(self):
-        return len(self.attendees) >= self.capacity
+def time_logger(func):
+    """Tracks system performance for file operations and heavy logic."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"\n[LOG] {func.__name__} executed in {end_time - start_time:.4f}s")
+        return result
+    return wrapper
 
-    def __str__(self):
-        return f"[{self.event_id}] {self.title} on {self.date.strftime('%b %d, %Y %H:%M')} (Capacity: {len(self.attendees)}/{self.capacity})"
+def admin_required(func):
+    """Restricts access to administrative methods."""
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if hasattr(self, 'current_user') and self.current_user.get('role') == 'admin':
+            return func(self, *args, **kwargs)
+        print("\n[ERROR] Access Denied: Administrator privileges required.")
+        return None
+    return wrapper
 
+# --- CORE CLASSES [cite: 23] ---
 
-class User:
-    """Base class for all system users (Students)."""
-    def __init__(self, name, email):
-        self.user_id = str(uuid.uuid4())[:8]
-        self.name = name
-        self.email = email
-        self.role = "Student"
-        # List to track the chronological order of user's registered events
-        self.registered_events = [] 
-
-    def __str__(self):
-        return f"{self.name} ({self.role}) - ID: {self.user_id}"
-
-
-class Admin(User):
-    """Admin class inheriting from User with elevated privileges."""
-    def __init__(self, name, email):
-        super().__init__(name, email)
-        self.role = "Admin"
-
-    # Placeholder for Week 3 logic
-    def create_event(self, system_events_dict, title, description, date_str, capacity):
-        new_event = Event(title, description, date_str, capacity)
-        system_events_dict[new_event.event_id] = new_event
-        print(f"Admin {self.name} created event: {title}")
-        return new_event
-
-
-class EventManager:
-    """Main system class holding the core data structures."""
+class EventHub:
     def __init__(self):
-        # Dictionaries map IDs to their respective objects for fast lookup
-        self.users = {}  
-        self.events = {} 
+        self.events_file = "events.json"
+        self.users_file = "users.json"
+        self.events = self.load_data(self.events_file) 
+        self.current_user = None
 
-    def add_user(self, user):
-        self.users[user.user_id] = user
-        print(f"Added to system: {user}")
+    @time_logger
+    def load_data(self, filename):
+        if os.path.exists(filename):
+            with open(filename, 'r') as f:
+                return json.load(f)
+        return {}
 
+    def clear_screen(self):
+        """Improves UI by clearing the console[cite: 24]."""
+        os.system('cls' if os.name == 'nt' else 'clear')
 
-# WEEK 1 TEST RUN
+    # --- ADVANCED LOGIC (Week 4 Focus)  ---
 
+    def validate_date(self, date_str):
+        """Uses datetime to ensure event dates are valid and in the future[cite: 24, 16]."""
+        try:
+            event_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M")
+            if event_date < datetime.now():
+                print("[ERROR] Cannot schedule events in the past.")
+                return None
+            return event_date.strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            print("[ERROR] Invalid format. Use YYYY-MM-DD HH:MM")
+            return None
+
+    @admin_required
+    def create_event(self):
+        """Admin tool to add new events[cite: 13]."""
+        self.clear_screen()
+        print("--- Create New Event ---")
+        name = input("Event Name: ")
+        date_str = input("Date/Time (YYYY-MM-DD HH:MM): ")
+        
+        valid_date = self.validate_date(date_str)
+        if not valid_date: return
+
+        capacity = int(input("Max Capacity: "))
+        event_id = str(uuid.uuid4())[:8] 
+        
+        self.events[event_id] = {
+            "name": name,
+            "date": valid_date,
+            "capacity": capacity,
+            "attendees": []
+        }
+        print(f"\n[SUCCESS] Event '{name}' created with ID: {event_id}")
+
+    # --- INTERACTIVE MENUS  ---
+
+    def student_menu(self):
+        while True:
+            self.clear_screen()
+            print(f"--- Student Portal | Welcome, {self.current_user['name']} ---")
+            print("1. Browse Events")
+            print("2. Book a Ticket")
+            print("3. Cancel Reservation")
+            print("4. Logout")
+            
+            choice = input("\nSelect an option: ")
+            
+            if choice == '1':
+                self.view_events()
+            elif choice == '2':
+                self.book_event() 
+            elif choice == '4':
+                break
+            input("\nPress Enter to continue...")
+
+    def admin_menu(self):
+        while True:
+            self.clear_screen()
+            print(f"--- Admin Dashboard | System Control ---")
+            print("1. View All Events")
+            print("2. Create New Event")
+            print("3. Delete Event")
+            print("4. Logout")
+            
+            choice = input("\nSelect an option: ")
+            
+            if choice == '1':
+                self.view_events()
+            elif choice == '2':
+                self.create_event() 
+            elif choice == '4':
+                break
+            input("\nPress Enter to continue...")
+
+    def view_events(self):
+        """Displays formatted event list[cite: 9, 32]."""
+        print(f"\n{'ID':<10} {'Event Name':<20} {'Date':<20} {'Capacity'}")
+        print("-" * 60)
+        for eid, details in self.events.items():
+            spots = f"{len(details['attendees'])}/{details['capacity']}"
+            print(f"{eid:<10} {details['name']:<20} {details['date']:<20} {spots}")
+
+# --- MAIN EXECUTION LOOP ---
 if __name__ == "__main__":
-    print("Initializing EventHub System...")
-    app = EventManager()
-
-    # 1. Create users
-    student1 = User("Alikhan Yertaiuly", "alikhan@example.com")
-    admin1 = Admin("Super Admin", "admin@example.com")
-
-    # Add to system dictionary
-    app.add_user(student1)
-    app.add_user(admin1)
-
-    # 2. Admin creates an event
-    print("\nCreating Events...")
-    event1 = admin1.create_event(
-        system_events_dict=app.events,
-        title="Intro to Python Hackathon",
-        description="A competitive coding event for first-year students.",
-        date_str="2026-05-15 14:00",
-        capacity=50
-    )
-
-    # 3. Display current system state
-    print("\n--- System Status ---")
-    print("Total Users Registered:", len(app.users))
-    print("Total Events Available:", len(app.events))
+    hub = EventHub()
+    # Mock login for Week 4 testing [cite: 12]
+    print("Welcome to EventHub")
+    role_check = input("Login as (1) Student or (2) Admin: ")
     
-    for e_id, event_obj in app.events.items():
-        print(event_obj)
+    if role_check == '2':
+        hub.current_user = {"name": "Admin_User", "role": "admin"}
+        hub.admin_menu()
+    else:
+        hub.current_user = {"name": "Student_User", "role": "student"}
+        hub.student_menu()
