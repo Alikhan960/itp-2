@@ -76,7 +76,7 @@ class EventHub:
         capacity = int(input("Max Capacity: "))
         event_id = str(uuid.uuid4())[:8] 
         
-        self.events[event_id] = {
+        self.events[event_id] = { \
             "name": name,
             "date": valid_date,
             "capacity": capacity,
