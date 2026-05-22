@@ -1,0 +1,5 @@
+Course: Python Programming
+Average Score: 84.50
+Highest Score: 99
+Lowest Score: 61
+Sorted Scores: [61, 78, 85, 91, 93, 99]

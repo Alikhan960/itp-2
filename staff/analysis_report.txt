@@ -1,0 +1,15 @@
+=== Text Analysis Report ===
+
+[WordCounterPlugin]
+  Total Words: 47
+
+[EmailExtractorPlugin]
+  Emails Found: ['admin@test.com', 'info@company.org', 'support@example.com']
+
+[HashtagExtractorPlugin]
+  Hashtags Found: ['#python', '#decorators', '#programming', '#coding']
+
+[SentenceStatisticsPlugin]
+  Total Sentences: 8
+  Avg Words/Sentence: 5.88
+

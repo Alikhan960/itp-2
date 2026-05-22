@@ -1,0 +1,11 @@
+Student | login | success
+Student | login | success
+Teacher | login | success
+Student | submit_assignment | score=95
+Student | view_gpa | 3.8
+Student | submit_assignment | score=88
+Teacher | grade_student | Alice=95
+Teacher | create_exam | Python Programming
+Student | logout | success
+Student | logout | success
+Teacher | logout | success

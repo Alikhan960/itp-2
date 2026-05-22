@@ -1,0 +1,46 @@
+[
+    {
+        "event_id": "13a7446d",
+        "title": "Python Workshop",
+        "description": "Hands-on intro to Python data structures and OOP.",
+        "date": "2026-06-15",
+        "time": "10:00",
+        "location": "Room 301, CS Building",
+        "capacity": 30,
+        "category": "workshop",
+        "created_by": "admin",
+        "attendees": [
+            "8faefed6"
+        ],
+        "created_at": "2026-05-22 12:23:57",
+        "is_active": true
+    },
+    {
+        "event_id": "3beaf642",
+        "title": "University Hackathon 2026",
+        "description": "48-hour coding competition. Form teams and build something amazing!",
+        "date": "2026-07-01",
+        "time": "09:00",
+        "location": "Main Auditorium",
+        "capacity": 100,
+        "category": "hackathon",
+        "created_by": "admin",
+        "attendees": [],
+        "created_at": "2026-05-22 12:23:57",
+        "is_active": true
+    },
+    {
+        "event_id": "e021d007",
+        "title": "AI & Machine Learning Seminar",
+        "description": "Guest lecture by Dr. Akhmetov on modern ML applications.",
+        "date": "2026-06-20",
+        "time": "14:00",
+        "location": "Lecture Hall B",
+        "capacity": 50,
+        "category": "seminar",
+        "created_by": "admin",
+        "attendees": [],
+        "created_at": "2026-05-22 12:23:57",
+        "is_active": true
+    }
+]

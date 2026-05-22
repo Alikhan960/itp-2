@@ -1,0 +1,3 @@
+--- Valid Employees ---
+EMP-1001 | Alice Brown | IT
+EMP-1002 | Bob Smith | Finance

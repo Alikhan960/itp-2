@@ -1,0 +1,4 @@
+--- Invalid Entries ---
+EMP-1003 | Carol Doe | ERROR: Invalid email format.
+EMP1004 | Dan Lee | ERROR: Invalid employee ID format.
+EMP-1005 | Eve White | ERROR: Weak password.

@@ -1,0 +1,11 @@
+[
+    {
+        "ticket_id": "94be7f8c-6ae1-4da7-961f-1cbf90f5c6aa",
+        "user_id": "8faefed6",
+        "event_id": "13a7446d",
+        "username": "test2",
+        "event_title": "Python Workshop",
+        "booked_at": "2026-05-22 13:58:40",
+        "status": "active"
+    }
+]

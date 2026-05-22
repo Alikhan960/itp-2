@@ -1,147 +1,62 @@
+"""
+main.py
+EventHub — University Event & Registration Manager
+Entry point: initializes the system, seeds defaults, and starts the UI.
+
+Author : Alikhan Yertaiuly
+Group  : SE-2504
+"""
+
+import sys
 import os
-import json
-import uuid
-import time
-from datetime import datetime
-from functools import wraps
 
-# --- DECORATORS  ---
+# E  path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-def time_logger(func):
-    """Tracks system performance for file operations and heavy logic."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        print(f"\n[LOG] {func.__name__} executed in {end_time - start_time:.4f}s")
-        return result
-    return wrapper
+from event_manager import EventManager
+from utils.file_manager import seed_defaults
+from utils.display import clear, banner, success, info, CYAN, RESET, BOLD
+from menus.auth_menu import auth_menu
+from menus.student_menu import student_menu
+from menus.admin_menu import admin_menu
 
-def admin_required(func):
-    """Restricts access to administrative methods."""
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if hasattr(self, 'current_user') and self.current_user.get('role') == 'admin':
-            return func(self, *args, **kwargs)
-        print("\n[ERROR] Access Denied: Administrator privileges required.")
-        return None
-    return wrapper
 
-# --- CORE CLASSES [cite: 23] ---
+def main():
+    """Application bootstrap and main event loop."""
+    clear()
+    banner()
 
-class EventHub:
-    def __init__(self):
-        self.events_file = "events.json"
-        self.users_file = "users.json"
-        self.events = self.load_data(self.events_file) 
-        self.current_user = None
+    # initialise 
+    print(f"  {CYAN}Initializing EventHub...{RESET}\n")
+    seed_defaults()
 
-    @time_logger
-    def load_data(self, filename):
-        if os.path.exists(filename):
-            with open(filename, 'r') as f:
-                return json.load(f)
-        return {}
+    manager = EventManager()
+    manager.load_all()
 
-    def clear_screen(self):
-        """Improves UI by clearing the console[cite: 24]."""
-        os.system('cls' if os.name == 'nt' else 'clear')
+    success("System ready!")
+    input("\n  Press Enter to continue to login...")
 
-    # --- ADVANCED LOGIC (Week 4 Focus)  ---
+    #main loop 
+    while True:
+        current_user = auth_menu(manager)
 
-    def validate_date(self, date_str):
-        """Uses datetime to ensure event dates are valid and in the future[cite: 24, 16]."""
-        try:
-            event_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M")
-            if event_date < datetime.now():
-                print("[ERROR] Cannot schedule events in the past.")
-                return None
-            return event_date.strftime("%Y-%m-%d %H:%M")
-        except ValueError:
-            print("[ERROR] Invalid format. Use YYYY-MM-DD HH:MM")
-            return None
+        if current_user is None:
+            # user chose to exit
+            clear()
+            print(f"\n{BOLD}{CYAN}  Thank you for using EventHub. Goodbye! 👋{RESET}\n")
+            break
 
-    @admin_required
-    def create_event(self):
-        """Admin tool to add new events[cite: 13]."""
-        self.clear_screen()
-        print("--- Create New Event ---")
-        name = input("Event Name: ")
-        date_str = input("Date/Time (YYYY-MM-DD HH:MM): ")
-        
-        valid_date = self.validate_date(date_str)
-        if not valid_date: return
+        # route
+        if current_user.role == "admin":
+            admin_menu(manager, current_user)
+        else:
+            student_menu(manager, current_user)
 
-        capacity = int(input("Max Capacity: "))
-        event_id = str(uuid.uuid4())[:8] 
-        
-        self.events[event_id] = { \
-            "name": name,
-            "date": valid_date,
-            "capacity": capacity,
-            "attendees": []
-        }
-        print(f"\n[SUCCESS] Event '{name}' created with ID: {event_id}")
+        # save everything on logout, just in case
+        manager.save_all()
+        info("Session ended. Returning to login screen...")
+        input("\n  Press Enter to continue...")
 
-    # --- INTERACTIVE MENUS  ---
 
-    def student_menu(self):
-        while True:
-            self.clear_screen()
-            print(f"--- Student Portal | Welcome, {self.current_user['name']} ---")
-            print("1. Browse Events")
-            print("2. Book a Ticket")
-            print("3. Cancel Reservation")
-            print("4. Logout")
-            
-            choice = input("\nSelect an option: ")
-            
-            if choice == '1':
-                self.view_events()
-            elif choice == '2':
-                self.book_event() 
-            elif choice == '4':
-                break
-            input("\nPress Enter to continue...")
-
-    def admin_menu(self):
-        while True:
-            self.clear_screen()
-            print(f"--- Admin Dashboard | System Control ---")
-            print("1. View All Events")
-            print("2. Create New Event")
-            print("3. Delete Event")
-            print("4. Logout")
-            
-            choice = input("\nSelect an option: ")
-            
-            if choice == '1':
-                self.view_events()
-            elif choice == '2':
-                self.create_event() 
-            elif choice == '4':
-                break
-            input("\nPress Enter to continue...")
-
-    def view_events(self):
-        """Displays formatted event list[cite: 9, 32]."""
-        print(f"\n{'ID':<10} {'Event Name':<20} {'Date':<20} {'Capacity'}")
-        print("-" * 60)
-        for eid, details in self.events.items():
-            spots = f"{len(details['attendees'])}/{details['capacity']}"
-            print(f"{eid:<10} {details['name']:<20} {details['date']:<20} {spots}")
-
-# --- MAIN EXECUTION LOOP ---
 if __name__ == "__main__":
-    hub = EventHub()
-    # Mock login for Week 4 testing [cite: 12]
-    print("Welcome to EventHub")
-    role_check = input("Login as (1) Student or (2) Admin: ")
-    
-    if role_check == '2':
-        hub.current_user = {"name": "Admin_User", "role": "admin"}
-        hub.admin_menu()
-    else:
-        hub.current_user = {"name": "Student_User", "role": "student"}
-        hub.student_menu()
+    main()
